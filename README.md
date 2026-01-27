@@ -1,6 +1,6 @@
 # zulip-moltbot
 
-A robust Zulip integration for [Moltbot](https://github.com/moltbot/moltbot) / Moltbot — full bidirectional communication with persona routing, reactions, and topic-aware messaging.
+A Zulip channel plugin for [Moltbot](https://github.com/moltbot/moltbot) — bidirectional messaging with persona routing and topic-aware conversations.
 
 ## Why Zulip?
 
@@ -10,70 +10,65 @@ Zulip's topic model makes it uniquely powerful for structured AI agent work:
 - **Generous API limits** — no rate limit hell
 - **Email-like threading** — topics are long-lived, not ephemeral
 
-## Feature Plan
+## Status
 
-### Tier 1: Core (must-have)
+The plugin loads in Moltbot and implements the core channel plugin contract (config, outbound, actions, gateway). Not yet tested end-to-end.
 
-- **Bidirectional messages** — send/receive in streams, topics, and DMs via Moltbot's native `message` tool
-- **Topic-aware routing** — messages route to the right agent/persona based on stream + topic
-- **Reactions** — read, add, remove; multiple per message
-- **Message history** — fetch recent messages for context (backfill)
-- **Edit & delete** — full message lifecycle
-- **File/image support** — send and receive attachments
+## Roadmap
 
-### Tier 2: Rich Integration
+### Now: End-to-end validation
+- Verify gateway starts and receives Zulip events
+- Verify outbound messaging works through Moltbot's `message` tool
+- Fix whatever breaks
 
-- **Persona routing** — map streams to personas with per-persona avatar, voice, and style rules
-- **Search** — query message history across streams/topics
-- **Stream/topic management** — create, list, archive, subscribe
-- **User context** — sender name, email, role, presence (online/idle/offline)
-- **Typing indicators** — show when composing
+### Next: Context and personas
+- **Message history/backfill** — agent needs recent context to respond well
+- **Persona routing** — map streams to personas (the killer feature)
 
-### Tier 3: Zulip-Specific
-
-- **Topic lifecycle** — resolve/unresolve topics
-- **Message starring** — flag important messages
-- **Muted topics** — respect mute preferences
-- **Linkifiers** — custom URL patterns
-- **User groups** — permission-aware behavior
-
-### Tier 4: Infrastructure
-
-- **Real-time events** — long-polling with automatic reconnection
-- **Rate limiting** — respect API limits, queue outbound messages
-- **Multi-org support** — connect to multiple Zulip instances
-- **Webhook mode** — alternative to polling for lighter setups
-- **Config schema** — declarative routing, style rules, and filters
+### Later: As needed
+- File/image support
+- Edit & delete
+- Stream/topic management
+- Search across streams/topics
 
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│                    Moltbot Gateway                       │
-├──────────────────────────────────────────────────────────┤
-│  zulip channel plugin                                     │
-│  ├── inbound: poll events → emit messages                │
-│  ├── outbound: sendText, sendMedia, react, edit, delete  │
-│  └── config: multi-account, persona routing              │
-├──────────────────────────────────────────────────────────┤
-│  zulip agent tools                                        │
-│  ├── zulip_send    (stream/DM messages)                  │
-│  ├── zulip_read    (fetch history, search)               │
-│  ├── zulip_react   (add/remove reactions)                │
-│  ├── zulip_streams (list, create, archive, subscribe)    │
-│  ├── zulip_topics  (list, create, resolve)               │
-│  ├── zulip_users   (list, info, presence)                │
-│  ├── zulip_upload  (files/images)                        │
-│  └── zulip_edit    (edit/delete messages)                │
-└──────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│                 Moltbot Gateway                  │
+├──────────────────────────────────────────────────┤
+│  zulip-moltbot channel plugin                    │
+│  ├── config: account from ~/.clawdbot/secrets/   │
+│  ├── gateway: long-poll event loop               │
+│  ├── outbound: sendText, sendMedia               │
+│  └── actions: send, react, read, edit, delete    │
+└──────────────────────────────────────────────────┘
 ```
+
+The plugin registers as a Moltbot channel. All messaging goes through Moltbot's native `message` tool via `actions.handleAction` — no separate agent tools needed.
+
+## Setup
+
+1. Add credentials to `~/.clawdbot/secrets/zulip.env`:
+   ```
+   ZULIP_EMAIL=bot@your-org.zulipchat.com
+   ZULIP_API_KEY=your-api-key
+   ZULIP_SITE=https://your-org.zulipchat.com
+   ```
+
+2. Add the plugin load path:
+   ```bash
+   clawdbot config set plugins.load.paths '["/path/to/zulip-moltbot"]'
+   clawdbot config set plugins.entries.zulip-moltbot.enabled true
+   ```
+
+3. Restart the gateway.
 
 ## Zulip API Reference
 
 - [REST API docs](https://zulip.com/api/)
 - [Real-time events](https://zulip.com/api/real-time-events)
 - [Message formatting](https://zulip.com/help/format-your-message-using-markdown)
-- [Incoming webhooks](https://zulip.com/api/incoming-webhooks-overview)
 
 ## License
 
