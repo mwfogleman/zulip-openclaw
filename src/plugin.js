@@ -29,7 +29,7 @@ function loadCredentials() {
 
 // --- API Client ---
 
-async function zulipApi(creds, endpoint, method = 'GET', data) {
+async function zulipApi(creds, endpoint, method = 'GET', data, opts = {}) {
   const url = new URL(`/api/v1${endpoint}`, creds.site);
   const auth = Buffer.from(`${creds.email}:${creds.apiKey}`).toString('base64');
   const headers = { 'Authorization': `Basic ${auth}` };
@@ -40,7 +40,12 @@ async function zulipApi(creds, endpoint, method = 'GET', data) {
     body = new URLSearchParams(data).toString();
   }
 
-  const response = await fetch(url.toString(), { method, headers, body });
+  const fetchOpts = { method, headers, body };
+  if (opts.timeoutMs) {
+    fetchOpts.signal = AbortSignal.timeout(opts.timeoutMs);
+  }
+
+  const response = await fetch(url.toString(), fetchOpts);
   return response.json();
 }
 
@@ -139,9 +144,9 @@ const zulipPlugin = {
       const result = await zulipApi(creds, '/messages', 'POST', data);
 
       if (result.result === 'success') {
-        return { channel: 'zulip', ok: true, messageId: String(result.id) };
+        return { channel: 'zulip-moltbot', ok: true, messageId: String(result.id) };
       }
-      return { channel: 'zulip', ok: false, error: result.msg };
+      return { channel: 'zulip-moltbot', ok: false, error: result.msg };
     },
 
     sendMedia: async ({ to, text, mediaUrl, accountId, cfg, replyToId }) => {
@@ -275,12 +280,14 @@ const zulipPlugin = {
       const meResult = await zulipApi(creds, '/users/me');
       const myUserId = meResult.user_id;
 
-      // Poll loop
+      // Poll loop with 90s timeout (Zulip long-poll typically returns within 60s)
+      const POLL_TIMEOUT_MS = 90_000;
+
       const poll = async () => {
         while (!ctx.abortSignal?.aborted) {
           try {
             const qs = `queue_id=${encodeURIComponent(queueId)}&last_event_id=${lastEventId}`;
-            const result = await zulipApi(creds, `/events?${qs}`);
+            const result = await zulipApi(creds, `/events?${qs}`, 'GET', undefined, { timeoutMs: POLL_TIMEOUT_MS });
 
             if (result.result !== 'success') {
               if (String(result.msg).includes('BAD_EVENT_QUEUE_ID')) {
@@ -291,7 +298,11 @@ const zulipPlugin = {
                 if (reReg.result === 'success') {
                   queueId = reReg.queue_id;
                   lastEventId = reReg.last_event_id;
+                  ctx.log?.info?.('[zulip] Re-registered event queue');
                 }
+              } else {
+                ctx.log?.error?.(`[zulip] Poll failed: ${result.msg}`);
+                await new Promise(r => setTimeout(r, 5000));
               }
               continue;
             }
@@ -307,8 +318,10 @@ const zulipPlugin = {
                   ? `stream:${msg.display_recipient}`
                   : `private:${msg.sender_email}`;
 
+                ctx.log?.info?.(`[zulip] Received message from ${msg.sender_full_name} in ${chatId}`);
+
                 ctx.runtime?.emit?.('message', {
-                  channel: 'zulip',
+                  channel: 'zulip-moltbot',
                   accountId: account.accountId,
                   chatId,
                   messageId: String(msg.id),
@@ -321,6 +334,10 @@ const zulipPlugin = {
               }
             }
           } catch (err) {
+            if (err.name === 'TimeoutError') {
+              // Normal — long-poll timed out with no events, just retry
+              continue;
+            }
             ctx.log?.error?.(`[zulip] Poll error: ${err.message}`);
             await new Promise(r => setTimeout(r, 5000));
           }
