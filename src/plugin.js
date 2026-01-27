@@ -47,10 +47,10 @@ async function zulipApi(creds, endpoint, method = 'GET', data) {
 // --- Channel Plugin Definition ---
 
 const zulipPlugin = {
-  id: 'zulip',
+  id: 'zulip-moltbot',
 
   meta: {
-    id: 'zulip',
+    id: 'zulip-moltbot',
     label: 'Zulip',
     selectionLabel: 'Zulip (Bot API)',
     docsPath: '/channels/zulip',

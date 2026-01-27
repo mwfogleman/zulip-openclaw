@@ -115,5 +115,5 @@ function register(api) {
 
 module.exports = register;
 module.exports.default = register;
-module.exports.id = 'zulip';
+module.exports.id = 'zulip-moltbot';
 module.exports.name = 'Zulip';
