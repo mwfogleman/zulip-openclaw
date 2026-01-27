@@ -4,5 +4,10 @@
   "description": "Zulip messaging channel for Moltbot — bidirectional, topic-aware, with persona routing",
   "version": "0.1.0",
   "channels": ["zulip"],
-  "entry": "src/index.js"
+  "entry": "src/index.js",
+  "configSchema": {
+    "type": "object",
+    "properties": {},
+    "additionalProperties": false
+  }
 }
