@@ -68,37 +68,6 @@ Zulip's topic model makes it uniquely powerful for structured AI agent work:
 └──────────────────────────────────────────────────────────┘
 ```
 
-## Configuration Example
-
-```yaml
-zulip:
-  accounts:
-    - id: default
-      email: bot@your-org.zulipchat.com
-      apiKey: ${ZULIP_API_KEY}
-      site: https://your-org.zulipchat.com
-
-  routing:
-    streams:
-      mentor:
-        persona: mentor
-        style: concise     # 1-3 sentences, questions over statements
-      creative:
-        persona: muse
-        style: expressive  # vivid, playful
-      general:
-        persona: default
-        style: balanced
-
-  events:
-    pollIntervalMs: 1000
-    reconnectDelayMs: 5000
-    
-  messages:
-    defaultStyle: short   # short | balanced | detailed
-    maxLength: 500        # characters, 0 = unlimited
-```
-
 ## Zulip API Reference
 
 - [REST API docs](https://zulip.com/api/)
