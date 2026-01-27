@@ -1,6 +1,6 @@
 # zulip-moltbot
 
-A robust Zulip integration for [Clawdbot](https://github.com/clawdbot/clawdbot) / Moltbot — full bidirectional communication with persona routing, reactions, and topic-aware messaging.
+A robust Zulip integration for [Moltbot](https://github.com/moltbot/moltbot) / Moltbot — full bidirectional communication with persona routing, reactions, and topic-aware messaging.
 
 ## Why Zulip?
 
@@ -14,7 +14,7 @@ Zulip's topic model makes it uniquely powerful for structured AI agent work:
 
 ### Tier 1: Core (must-have)
 
-- **Bidirectional messages** — send/receive in streams, topics, and DMs via Clawdbot's native `message` tool
+- **Bidirectional messages** — send/receive in streams, topics, and DMs via Moltbot's native `message` tool
 - **Topic-aware routing** — messages route to the right agent/persona based on stream + topic
 - **Reactions** — read, add, remove; multiple per message
 - **Message history** — fetch recent messages for context (backfill)
@@ -49,7 +49,7 @@ Zulip's topic model makes it uniquely powerful for structured AI agent work:
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│                    Clawdbot Gateway                       │
+│                    Moltbot Gateway                       │
 ├──────────────────────────────────────────────────────────┤
 │  zulip channel plugin                                     │
 │  ├── inbound: poll events → emit messages                │
