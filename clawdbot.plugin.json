@@ -1,0 +1,8 @@
+{
+  "id": "zulip",
+  "name": "Zulip",
+  "description": "Zulip messaging channel for Moltbot — bidirectional, topic-aware, with persona routing",
+  "version": "0.1.0",
+  "channels": ["zulip"],
+  "entry": "src/index.js"
+}
