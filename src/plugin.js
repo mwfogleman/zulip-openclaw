@@ -338,6 +338,41 @@ const zulipPlugin = {
 
                 ctx.log?.info?.(`[zulip] Received message from ${msg.sender_full_name} in ${chatId}`);
 
+                // Fetch recent topic/DM context for ThreadStarterBody
+                let threadStarterBody;
+                try {
+                  const contextNarrow = [];
+                  if (isStream) {
+                    contextNarrow.push({ operator: 'stream', operand: msg.display_recipient });
+                    contextNarrow.push({ operator: 'topic', operand: msg.subject });
+                  } else {
+                    contextNarrow.push({ operator: 'dm', operand: [creds.email, msg.sender_email] });
+                  }
+
+                  const CONTEXT_LIMIT = 15;
+                  const contextQs = new URLSearchParams({
+                    narrow: JSON.stringify(contextNarrow),
+                    num_before: String(CONTEXT_LIMIT),
+                    num_after: '0',
+                    anchor: String(msg.id),
+                  }).toString();
+
+                  const contextResult = await zulipApi(creds, `/messages?${contextQs}`);
+                  if (contextResult.result === 'success' && contextResult.messages?.length > 0) {
+                    const formatted = contextResult.messages.map(m => {
+                      const name = m.sender_id === myUserId ? '(bot)' : m.sender_full_name;
+                      const content = m.content.replace(/<[^>]*>/g, '');
+                      return `[${name}] ${content}`;
+                    }).join('\n');
+                    const label = isStream
+                      ? `Recent messages in #${msg.display_recipient} > ${msg.subject}`
+                      : `Recent DM history`;
+                    threadStarterBody = `${label}:\n${formatted}`;
+                  }
+                } catch (err) {
+                  ctx.log?.warn?.(`[zulip] Failed to fetch context: ${err.message}`);
+                }
+
                 // Dispatch through Moltbot's inbound message system
                 try {
                   const runtime = getPluginRuntime();
@@ -370,6 +405,7 @@ const zulipPlugin = {
                     ThreadId: isStream ? msg.subject : undefined,
                     GroupSubject: isStream ? msg.display_recipient : undefined,
                     CommandAuthorized: true,
+                    ThreadStarterBody: threadStarterBody,
                   });
 
                   // Send reply back to Zulip
