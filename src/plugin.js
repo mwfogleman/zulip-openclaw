@@ -174,7 +174,7 @@ const zulipPlugin = {
     listActions: ({ cfg }) => {
       const accounts = zulipPlugin.config.listAccountIds(cfg);
       if (accounts.length === 0) return [];
-      return ['send', 'react', 'read', 'edit', 'delete'];
+      return ['send', 'react', 'reactions', 'read', 'edit', 'delete'];
     },
 
     handleAction: async ({ action, params, cfg, accountId }) => {
@@ -214,6 +214,19 @@ const zulipPlugin = {
         const method = remove ? 'DELETE' : 'POST';
         const result = await zulipApi(creds, `/messages/${messageId}/reactions`, method, { emoji_name: emoji });
         return { ok: result.result === 'success', error: result.msg };
+      }
+
+      if (action === 'reactions') {
+        const messageId = params.messageId;
+        const result = await zulipApi(creds, `/messages/${messageId}`);
+        if (result.result === 'success') {
+          const reactions = (result.message?.reactions ?? []).map(r => ({
+            emoji: r.emoji_name,
+            user: r.user?.full_name ?? 'unknown',
+          }));
+          return { ok: true, messageId, reactions };
+        }
+        return { ok: false, error: result.msg };
       }
 
       if (action === 'read') {
