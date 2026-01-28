@@ -379,10 +379,13 @@ const zulipPlugin = {
                   const cfg = runtime.config.loadConfig();
 
                   // Resolve agent route for this message
+                  const peer = isStream
+                    ? { kind: 'channel', id: `${msg.display_recipient}:${msg.subject}` }
+                    : { kind: 'direct', id: String(msg.sender_id) };
                   const route = runtime.channel.routing.resolveAgentRoute({
                     channel: 'zulip-moltbot',
                     accountId: account.accountId,
-                    peer: { kind: 'direct', id: String(msg.sender_id) },
+                    peer,
                     cfg,
                   });
 
