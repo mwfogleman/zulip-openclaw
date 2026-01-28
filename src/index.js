@@ -6,6 +6,10 @@
 
 const { zulipPlugin, loadCredentials, zulipApi, setPluginRuntime } = require('./plugin.js');
 
+function jsonResult(payload) {
+  return { content: [{ type: 'text', text: JSON.stringify(payload, null, 2) }] };
+}
+
 function register(api) {
   const logger = api.logger ?? console;
 
@@ -32,18 +36,18 @@ function register(api) {
       },
       execute: async (toolCallId, params) => {
         const creds = loadCredentials();
-        if (!creds) return { error: 'No Zulip credentials configured' };
+        if (!creds) return jsonResult({ error: 'No Zulip credentials configured' });
 
         if (params.stream) {
           const data = { type: 'stream', to: params.stream, content: params.message, topic: params.topic ?? 'general' };
           const result = await zulipApi(creds, '/messages', 'POST', data);
-          return result.result === 'success' ? { ok: true, messageId: result.id } : { ok: false, error: result.msg };
+          return jsonResult(result.result === 'success' ? { ok: true, messageId: result.id } : { ok: false, error: result.msg });
         } else if (params.user) {
           const data = { type: 'private', to: params.user, content: params.message };
           const result = await zulipApi(creds, '/messages', 'POST', data);
-          return result.result === 'success' ? { ok: true, messageId: result.id } : { ok: false, error: result.msg };
+          return jsonResult(result.result === 'success' ? { ok: true, messageId: result.id } : { ok: false, error: result.msg });
         }
-        return { error: 'Must specify either stream or user' };
+        return jsonResult({ error: 'Must specify either stream or user' });
       },
     }, { name: 'zulip_send' });
 
@@ -61,7 +65,7 @@ function register(api) {
       },
       execute: async (toolCallId, params) => {
         const creds = loadCredentials();
-        if (!creds) return { error: 'No Zulip credentials configured' };
+        if (!creds) return jsonResult({ error: 'No Zulip credentials configured' });
 
         const narrow = [{ operator: 'stream', operand: params.stream }];
         if (params.topic) narrow.push({ operator: 'topic', operand: params.topic });
@@ -75,7 +79,7 @@ function register(api) {
 
         const result = await zulipApi(creds, `/messages?${qs}`);
         if (result.result === 'success') {
-          return {
+          return jsonResult({
             ok: true,
             messages: (result.messages ?? []).reverse().map(m => ({
               id: m.id,
@@ -85,9 +89,9 @@ function register(api) {
               timestamp: m.timestamp,
               reactions: (m.reactions ?? []).map(r => ({ emoji: r.emoji_name, user: r.user.full_name })),
             })),
-          };
+          });
         }
-        return { ok: false, error: result.msg };
+        return jsonResult({ ok: false, error: result.msg });
       },
     }, { name: 'zulip_read' });
 
@@ -105,14 +109,14 @@ function register(api) {
       },
       execute: async (toolCallId, params) => {
         const creds = loadCredentials();
-        if (!creds) return { error: 'No Zulip credentials configured' };
+        if (!creds) return jsonResult({ error: 'No Zulip credentials configured' });
 
         const method = params.remove ? 'DELETE' : 'POST';
         const result = await zulipApi(creds, `/messages/${params.messageId}/reactions`, method, { emoji_name: params.emoji });
         if (result.result === 'success') {
-          return { ok: true, emoji: params.emoji, messageId: params.messageId };
+          return jsonResult({ ok: true, emoji: params.emoji, messageId: params.messageId });
         }
-        return { ok: false, error: result.msg ?? 'Unknown error' };
+        return jsonResult({ ok: false, error: result.msg ?? 'Unknown error' });
       },
     }, { name: 'zulip_react' });
   }
