@@ -83,6 +83,7 @@ function register(api) {
               topic: m.subject,
               content: m.content.replace(/<[^>]*>/g, ''),
               timestamp: m.timestamp,
+              reactions: (m.reactions ?? []).map(r => ({ emoji: r.emoji_name, user: r.user.full_name })),
             })),
           };
         }

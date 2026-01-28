@@ -362,7 +362,9 @@ const zulipPlugin = {
                     const formatted = contextResult.messages.map(m => {
                       const name = m.sender_id === myUserId ? '(bot)' : m.sender_full_name;
                       const content = m.content.replace(/<[^>]*>/g, '');
-                      return `[${name}] ${content}`;
+                      const reactions = (m.reactions ?? []).map(r => r.emoji_name);
+                      const reactStr = reactions.length > 0 ? ` [reacts: ${reactions.join(', ')}]` : '';
+                      return `[${name}] ${content}${reactStr}`;
                     }).join('\n');
                     const label = isStream
                       ? `Recent messages in #${msg.display_recipient} > ${msg.subject}`
