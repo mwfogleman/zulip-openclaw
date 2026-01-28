@@ -109,7 +109,10 @@ function register(api) {
 
         const method = params.remove ? 'DELETE' : 'POST';
         const result = await zulipApi(creds, `/messages/${params.messageId}/reactions`, method, { emoji_name: params.emoji });
-        return { ok: result.result === 'success', error: result.msg };
+        if (result.result === 'success') {
+          return { ok: true, emoji: params.emoji, messageId: params.messageId };
+        }
+        return { ok: false, error: result.msg ?? 'Unknown error' };
       },
     }, { name: 'zulip_react' });
   }
