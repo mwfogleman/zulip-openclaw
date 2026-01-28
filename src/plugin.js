@@ -364,7 +364,7 @@ const zulipPlugin = {
                       const content = m.content.replace(/<[^>]*>/g, '');
                       const reactions = (m.reactions ?? []).map(r => r.emoji_name);
                       const reactStr = reactions.length > 0 ? ` [reacts: ${reactions.join(', ')}]` : '';
-                      return `[${name}] ${content}${reactStr}`;
+                      return `[${name}] (id:${m.id}) ${content}${reactStr}`;
                     }).join('\n');
                     const label = isStream
                       ? `Recent messages in #${msg.display_recipient} > ${msg.subject}`
