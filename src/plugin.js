@@ -9,6 +9,19 @@ const { readFileSync, existsSync } = require('fs');
 const { join } = require('path');
 const { homedir } = require('os');
 
+// --- Plugin Runtime (set during registration) ---
+
+let pluginRuntime = null;
+
+function setPluginRuntime(runtime) {
+  pluginRuntime = runtime;
+}
+
+function getPluginRuntime() {
+  if (!pluginRuntime) throw new Error('Zulip plugin runtime not initialized');
+  return pluginRuntime;
+}
+
 // --- Credentials ---
 
 function loadCredentials() {
@@ -314,23 +327,80 @@ const zulipPlugin = {
                 const msg = event.message;
                 if (msg.sender_id === myUserId) continue;
 
-                const chatId = msg.type === 'stream'
+                const isStream = msg.type === 'stream';
+                const chatId = isStream
                   ? `stream:${msg.display_recipient}`
                   : `private:${msg.sender_email}`;
+                const from = isStream
+                  ? `zulip:${msg.display_recipient}`
+                  : `zulip:${msg.sender_id}`;
+                const text = msg.content.replace(/<[^>]*>/g, '');
 
                 ctx.log?.info?.(`[zulip] Received message from ${msg.sender_full_name} in ${chatId}`);
 
-                ctx.runtime?.emit?.('message', {
-                  channel: 'zulip-moltbot',
-                  accountId: account.accountId,
-                  chatId,
-                  messageId: String(msg.id),
-                  senderId: msg.sender_email,
-                  senderName: msg.sender_full_name,
-                  text: msg.content.replace(/<[^>]*>/g, ''),
-                  threadId: msg.subject ?? undefined,
-                  timestamp: msg.timestamp * 1000,
-                });
+                // Dispatch through Moltbot's inbound message system
+                try {
+                  const runtime = getPluginRuntime();
+                  const cfg = runtime.config.loadConfig();
+
+                  // Resolve agent route for this message
+                  const route = runtime.channel.routing.resolveAgentRoute({
+                    channel: 'zulip-moltbot',
+                    accountId: account.accountId,
+                    peer: { kind: 'direct', id: String(msg.sender_id) },
+                    cfg,
+                  });
+
+                  // Build inbound context (matching Moltbot's expected shape)
+                  const inboundCtx = runtime.channel.reply.finalizeInboundContext({
+                    Body: text,
+                    RawBody: text,
+                    From: from,
+                    To: `zulip:${account.email}`,
+                    SessionKey: route.sessionKey,
+                    AccountId: route.accountId,
+                    ChatType: isStream ? 'group' : 'direct',
+                    SenderName: msg.sender_full_name,
+                    SenderId: String(msg.sender_id),
+                    SenderUsername: msg.sender_email,
+                    Provider: 'zulip-moltbot',
+                    Surface: 'zulip',
+                    MessageSid: String(msg.id),
+                    Timestamp: msg.timestamp * 1000,
+                    ThreadId: isStream ? msg.subject : undefined,
+                    GroupSubject: isStream ? msg.display_recipient : undefined,
+                    CommandAuthorized: true,
+                  });
+
+                  // Send reply back to Zulip
+                  const replyTarget = isStream ? msg.display_recipient : msg.sender_email;
+                  const replyType = isStream ? 'stream' : 'private';
+                  const replyTopic = isStream ? msg.subject : undefined;
+
+                  await runtime.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
+                    ctx: inboundCtx,
+                    cfg,
+                    dispatcherOptions: {
+                      deliver: async (payload) => {
+                        const replyText = typeof payload === 'string' ? payload : (payload.body ?? payload.text ?? '');
+                        if (!replyText) return;
+
+                        const data = { type: replyType, to: replyTarget, content: replyText };
+                        if (replyTopic) data.topic = replyTopic;
+
+                        const sendResult = await zulipApi(creds, '/messages', 'POST', data);
+                        if (sendResult.result !== 'success') {
+                          ctx.log?.error?.(`[zulip] Failed to send reply: ${sendResult.msg}`);
+                        }
+                      },
+                      onError: (err) => {
+                        ctx.log?.error?.(`[zulip] Dispatch error: ${String(err)}`);
+                      },
+                    },
+                  });
+                } catch (dispatchErr) {
+                  ctx.log?.error?.(`[zulip] Failed to dispatch message: ${dispatchErr.message}`);
+                }
               }
             }
           } catch (err) {
@@ -365,4 +435,4 @@ const zulipPlugin = {
 
 // --- Export & Registration ---
 
-module.exports = { zulipPlugin, zulipApi, loadCredentials };
+module.exports = { zulipPlugin, zulipApi, loadCredentials, setPluginRuntime };

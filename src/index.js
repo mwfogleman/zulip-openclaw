@@ -1,13 +1,16 @@
 /**
  * Zulip Moltbot Plugin — Entry Point
- * 
+ *
  * Registers the Zulip channel plugin, tools, and services with Moltbot.
  */
 
-const { zulipPlugin, loadCredentials, zulipApi } = require('./plugin.js');
+const { zulipPlugin, loadCredentials, zulipApi, setPluginRuntime } = require('./plugin.js');
 
 function register(api) {
   const logger = api.logger ?? console;
+
+  // Store the plugin runtime so the gateway can dispatch inbound messages
+  setPluginRuntime(api.runtime);
 
   // Register channel plugin
   api.registerChannel({ plugin: zulipPlugin });
