@@ -457,13 +457,17 @@ const zulipPlugin = {
 
                 // Resolve persona for this message (if config exists)
                 let personaContent = null;
+                let personaDisplayName = null;
                 const personasConfig = loadPersonasConfig();
                 if (personasConfig && isStream) {
                   const personaId = resolvePersonaForMessage(personasConfig, msg.display_recipient, text);
                   if (personaId) {
                     personaContent = loadPersonaContent(personasConfig, personaId);
                     if (personaContent) {
-                      ctx.log?.info?.(`[zulip] Using persona: ${personaId}`);
+                      // Get display name from first trigger (capitalized)
+                      const persona = personasConfig.personas[personaId];
+                      personaDisplayName = persona?.triggers?.[0] ?? personaId;
+                      ctx.log?.info?.(`[zulip] Using persona: ${personaDisplayName}`);
                     }
                   }
                 }
@@ -523,8 +527,13 @@ const zulipPlugin = {
                     cfg,
                     dispatcherOptions: {
                       deliver: async (payload) => {
-                        const replyText = typeof payload === 'string' ? payload : (payload.body ?? payload.text ?? '');
+                        let replyText = typeof payload === 'string' ? payload : (payload.body ?? payload.text ?? '');
                         if (!replyText) return;
+
+                        // Prefix with persona name if available
+                        if (personaDisplayName) {
+                          replyText = `[${personaDisplayName}] ${replyText}`;
+                        }
 
                         const data = { type: replyType, to: replyTarget, content: replyText };
                         if (replyTopic) data.topic = replyTopic;
