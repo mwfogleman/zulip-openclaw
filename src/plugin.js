@@ -492,7 +492,7 @@ const zulipPlugin = {
                   // Prepend persona content to thread starter body if available
                   let fullThreadStarterBody = threadStarterBody;
                   if (personaContent) {
-                    const personaSection = `You are responding as this persona:\n---\n${personaContent}\n---\n\n`;
+                    const personaSection = `You are responding as this persona:\n---\n${personaContent}\n---\n\nDo not prefix your response with your name — the system will add it automatically.\n\n`;
                     fullThreadStarterBody = personaSection + (threadStarterBody ?? '');
                   }
 
