@@ -4,7 +4,7 @@
   "description": "Zulip channel plugin for OpenClaw",
   "main": "src/index.js",
   "license": "MIT",
-  "openclaw": {
+  "clawdbot": {
     "extensions": ["src/index.js"],
     "channel": {
       "id": "zulip",
