@@ -40,6 +40,73 @@ function loadCredentials() {
   return (creds.email && creds.apiKey && creds.site) ? creds : null;
 }
 
+// --- Persona Routing (Optional) ---
+
+function loadPersonasConfig() {
+  const configPath = join(homedir(), '.clawdbot', 'secrets', 'zulip-personas.json');
+  if (!existsSync(configPath)) return null;
+
+  try {
+    const content = readFileSync(configPath, 'utf-8');
+    return JSON.parse(content);
+  } catch (err) {
+    console.warn('[zulip] Failed to parse personas config:', err.message);
+    return null;
+  }
+}
+
+function resolvePersonaForMessage(config, streamName, messageText) {
+  if (!config) return null;
+
+  // Get available personas for this stream (or default)
+  const streamPersonas = config.streams[streamName] ?? config.streams['*'] ?? [];
+  if (streamPersonas.length === 0) return null;
+
+  // If only one persona for stream, use it
+  if (streamPersonas.length === 1) {
+    return streamPersonas[0];
+  }
+
+  // Check message for persona triggers
+  const messageStart = messageText.slice(0, 50).toLowerCase();
+  for (const personaId of streamPersonas) {
+    const persona = config.personas[personaId];
+    if (!persona) continue;
+
+    for (const trigger of persona.triggers) {
+      if (messageStart.includes(trigger.toLowerCase())) {
+        return personaId;
+      }
+    }
+  }
+
+  // Default to Ember if no match
+  return 'ember';
+}
+
+function loadPersonaContent(config, personaId) {
+  if (!config || !personaId) return null;
+
+  const persona = config.personas[personaId];
+  if (!persona) return null;
+
+  // Expand ~ in personasDir
+  const personasDir = config.personasDir.replace(/^~/, homedir());
+  const filePath = join(personasDir, persona.file);
+
+  if (!existsSync(filePath)) {
+    console.warn(`[zulip] Persona file not found: ${filePath}`);
+    return null;
+  }
+
+  try {
+    return readFileSync(filePath, 'utf-8');
+  } catch (err) {
+    console.warn(`[zulip] Failed to read persona file: ${err.message}`);
+    return null;
+  }
+}
+
 // --- API Client ---
 
 async function zulipApi(creds, endpoint, method = 'GET', data, opts = {}) {
@@ -388,6 +455,19 @@ const zulipPlugin = {
                   ctx.log?.warn?.(`[zulip] Failed to fetch context: ${err.message}`);
                 }
 
+                // Resolve persona for this message (if config exists)
+                let personaContent = null;
+                const personasConfig = loadPersonasConfig();
+                if (personasConfig && isStream) {
+                  const personaId = resolvePersonaForMessage(personasConfig, msg.display_recipient, text);
+                  if (personaId) {
+                    personaContent = loadPersonaContent(personasConfig, personaId);
+                    if (personaContent) {
+                      ctx.log?.info?.(`[zulip] Using persona: ${personaId}`);
+                    }
+                  }
+                }
+
                 // Dispatch through OpenClaw's inbound message system
                 try {
                   const runtime = getPluginRuntime();
@@ -405,6 +485,13 @@ const zulipPlugin = {
                   });
 
                   // Build inbound context (matching OpenClaw's expected shape)
+                  // Prepend persona content to thread starter body if available
+                  let fullThreadStarterBody = threadStarterBody;
+                  if (personaContent) {
+                    const personaSection = `You are responding as this persona:\n---\n${personaContent}\n---\n\n`;
+                    fullThreadStarterBody = personaSection + (threadStarterBody ?? '');
+                  }
+
                   const inboundCtx = runtime.channel.reply.finalizeInboundContext({
                     Body: text,
                     RawBody: text,
@@ -423,7 +510,7 @@ const zulipPlugin = {
                     ThreadId: isStream ? msg.subject : undefined,
                     GroupSubject: isStream ? msg.display_recipient : undefined,
                     CommandAuthorized: true,
-                    ThreadStarterBody: threadStarterBody,
+                    ThreadStarterBody: fullThreadStarterBody,
                   });
 
                   // Send reply back to Zulip
