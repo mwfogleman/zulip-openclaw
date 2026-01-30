@@ -1,10 +1,10 @@
 {
-  "name": "zulip-moltbot",
+  "name": "zulip-openclaw",
   "version": "0.1.0",
-  "description": "Zulip channel plugin for Moltbot",
+  "description": "Zulip channel plugin for OpenClaw",
   "main": "src/index.js",
   "license": "MIT",
-  "clawdbot": {
+  "openclaw": {
     "extensions": ["src/index.js"],
     "channel": {
       "id": "zulip",

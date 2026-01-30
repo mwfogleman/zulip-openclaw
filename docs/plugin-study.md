@@ -1,4 +1,4 @@
-# Moltbot Channel Plugin Study Notes
+# OpenClaw Channel Plugin Study Notes
 
 Based on reading the Slack plugin (~514 lines) and the plugin registry/discovery system.
 
@@ -45,7 +45,7 @@ A channel plugin is an object with these sections:
 - **`messaging`** — target normalization (how to parse "stream:general" etc.)
 - **`directory`** — list peers and groups
 - **`status`** — health probes, account snapshots
-- **`setup`** — config writing helpers for `clawdbot channels add`
+- **`setup`** — config writing helpers for `openclaw channels add`
 - **`streaming`** — coalesce settings for streaming responses
 - **`pairing`** — approval flow for new users
 - **`onboarding`** — setup wizard adapter
@@ -64,12 +64,12 @@ export default function register(api) {
 
 ## Discovery
 
-Moltbot discovers extensions from:
-1. `~/.clawdbot/extensions/` — user extensions (`.js`, `.ts`, `.mjs`)
-2. Workspace `node_modules` — npm packages with `clawdbot` field in package.json
-3. Bundled plugins — shipped with Moltbot
+OpenClaw discovers extensions from:
+1. `~/.openclaw/extensions/` — user extensions (`.js`, `.ts`, `.mjs`)
+2. Workspace `node_modules` — npm packages with `openclaw` field in package.json
+3. Bundled plugins — shipped with OpenClaw
 
-Extensions can be single files or directories with `clawdbot.plugin.json`.
+Extensions can be single files or directories with `openclaw.plugin.json`.
 
 ## Key Patterns from Slack Plugin
 

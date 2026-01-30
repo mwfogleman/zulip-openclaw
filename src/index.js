@@ -1,7 +1,7 @@
 /**
- * Zulip Moltbot Plugin — Entry Point
+ * Zulip OpenClaw Plugin — Entry Point
  *
- * Registers the Zulip channel plugin, tools, and services with Moltbot.
+ * Registers the Zulip channel plugin, tools, and services with OpenClaw.
  */
 
 const { zulipPlugin, loadCredentials, zulipApi, setPluginRuntime } = require('./plugin.js');
@@ -126,5 +126,5 @@ function register(api) {
 
 module.exports = register;
 module.exports.default = register;
-module.exports.id = 'zulip-moltbot';
+module.exports.id = 'zulip-openclaw';
 module.exports.name = 'Zulip';

@@ -1,7 +1,7 @@
 {
-  "id": "zulip-moltbot",
+  "id": "zulip-openclaw",
   "name": "Zulip",
-  "description": "Zulip messaging channel for Moltbot — bidirectional, topic-aware, with persona routing",
+  "description": "Zulip messaging channel for OpenClaw — bidirectional, topic-aware, with persona routing",
   "version": "0.1.0",
   "channels": ["zulip"],
   "entry": "src/index.js",

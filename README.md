@@ -1,6 +1,6 @@
-# zulip-moltbot
+# zulip-openclaw
 
-A Zulip channel plugin for [Moltbot](https://github.com/moltbot/moltbot) — bidirectional messaging with persona routing and topic-aware conversations.
+A Zulip channel plugin for [OpenClaw](https://github.com/openclaw/openclaw) — bidirectional messaging with persona routing and topic-aware conversations.
 
 ## Why Zulip?
 
@@ -12,20 +12,24 @@ Zulip's topic model makes it uniquely powerful for structured AI agent work:
 
 ## Status
 
-The plugin loads in Moltbot and implements the core channel plugin contract (config, outbound, actions, gateway). Not yet tested end-to-end.
+The plugin loads in OpenClaw and implements the core channel plugin contract (config, outbound, actions, gateway). Tested end-to-end with bidirectional messaging, context injection, and reactions.
+
+## Features
+
+- **Bidirectional messaging** — receive and respond to Zulip messages
+- **Topic context** — recent messages injected as conversation history
+- **Reactions** — see reactions on messages, add reactions via tools
+- **Session routing** — streams get their own sessions (separate from DMs)
 
 ## Roadmap
 
-### Now: End-to-end validation
-- Verify gateway starts and receives Zulip events
-- Verify outbound messaging works through Moltbot's `message` tool
-- Fix whatever breaks
-
-### Next: Context and personas
-- **Message history/backfill** — agent needs recent context to respond well
-- **Persona routing** — map streams to personas (the killer feature)
+### Next: Shareability
+- Documentation and README
+- ClawdHub skill publication
+- npm package
 
 ### Later: As needed
+- Persona routing — map streams to personas
 - File/image support
 - Edit & delete
 - Stream/topic management
@@ -35,21 +39,21 @@ The plugin loads in Moltbot and implements the core channel plugin contract (con
 
 ```
 ┌──────────────────────────────────────────────────┐
-│                 Moltbot Gateway                  │
+│                 OpenClaw Gateway                 │
 ├──────────────────────────────────────────────────┤
-│  zulip-moltbot channel plugin                    │
-│  ├── config: account from ~/.clawdbot/secrets/   │
+│  zulip-openclaw channel plugin                   │
+│  ├── config: account from ~/.openclaw/secrets/   │
 │  ├── gateway: long-poll event loop               │
 │  ├── outbound: sendText, sendMedia               │
 │  └── actions: send, react, read, edit, delete    │
 └──────────────────────────────────────────────────┘
 ```
 
-The plugin registers as a Moltbot channel. All messaging goes through Moltbot's native `message` tool via `actions.handleAction` — no separate agent tools needed.
+The plugin registers as an OpenClaw channel. All messaging goes through OpenClaw's native `message` tool via `actions.handleAction`. Agent tools (`zulip_send`, `zulip_read`, `zulip_react`) are also registered for direct use.
 
 ## Setup
 
-1. Add credentials to `~/.clawdbot/secrets/zulip.env`:
+1. Add credentials to `~/.openclaw/secrets/zulip.env`:
    ```
    ZULIP_EMAIL=bot@your-org.zulipchat.com
    ZULIP_API_KEY=your-api-key
@@ -58,8 +62,8 @@ The plugin registers as a Moltbot channel. All messaging goes through Moltbot's 
 
 2. Add the plugin load path:
    ```bash
-   clawdbot config set plugins.load.paths '["/path/to/zulip-moltbot"]'
-   clawdbot config set plugins.entries.zulip-moltbot.enabled true
+   openclaw config set plugins.load.paths '["/path/to/zulip-openclaw"]'
+   openclaw config set plugins.entries.zulip-openclaw.enabled true
    ```
 
 3. Restart the gateway.

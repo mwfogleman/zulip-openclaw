@@ -1,5 +1,5 @@
 /**
- * Zulip Channel Plugin for Moltbot
+ * Zulip Channel Plugin for OpenClaw
  * 
  * Provides bidirectional Zulip messaging with topic-aware routing,
  * reactions, and persona support.
@@ -65,10 +65,10 @@ async function zulipApi(creds, endpoint, method = 'GET', data, opts = {}) {
 // --- Channel Plugin Definition ---
 
 const zulipPlugin = {
-  id: 'zulip-moltbot',
+  id: 'zulip-openclaw',
 
   meta: {
-    id: 'zulip-moltbot',
+    id: 'zulip-openclaw',
     label: 'Zulip',
     selectionLabel: 'Zulip (Bot API)',
     docsPath: '/channels/zulip',
@@ -157,9 +157,9 @@ const zulipPlugin = {
       const result = await zulipApi(creds, '/messages', 'POST', data);
 
       if (result.result === 'success') {
-        return { channel: 'zulip-moltbot', ok: true, messageId: String(result.id) };
+        return { channel: 'zulip-openclaw', ok: true, messageId: String(result.id) };
       }
-      return { channel: 'zulip-moltbot', ok: false, error: result.msg };
+      return { channel: 'zulip-openclaw', ok: false, error: result.msg };
     },
 
     sendMedia: async ({ to, text, mediaUrl, accountId, cfg, replyToId }) => {
@@ -388,7 +388,7 @@ const zulipPlugin = {
                   ctx.log?.warn?.(`[zulip] Failed to fetch context: ${err.message}`);
                 }
 
-                // Dispatch through Moltbot's inbound message system
+                // Dispatch through OpenClaw's inbound message system
                 try {
                   const runtime = getPluginRuntime();
                   const cfg = runtime.config.loadConfig();
@@ -398,13 +398,13 @@ const zulipPlugin = {
                     ? { kind: 'channel', id: `${msg.display_recipient}:${msg.subject}` }
                     : { kind: 'direct', id: String(msg.sender_id) };
                   const route = runtime.channel.routing.resolveAgentRoute({
-                    channel: 'zulip-moltbot',
+                    channel: 'zulip-openclaw',
                     accountId: account.accountId,
                     peer,
                     cfg,
                   });
 
-                  // Build inbound context (matching Moltbot's expected shape)
+                  // Build inbound context (matching OpenClaw's expected shape)
                   const inboundCtx = runtime.channel.reply.finalizeInboundContext({
                     Body: text,
                     RawBody: text,
@@ -416,7 +416,7 @@ const zulipPlugin = {
                     SenderName: msg.sender_full_name,
                     SenderId: String(msg.sender_id),
                     SenderUsername: msg.sender_email,
-                    Provider: 'zulip-moltbot',
+                    Provider: 'zulip-openclaw',
                     Surface: 'zulip',
                     MessageSid: String(msg.id),
                     Timestamp: msg.timestamp * 1000,
