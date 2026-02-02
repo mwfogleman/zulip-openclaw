@@ -25,7 +25,7 @@ function getPluginRuntime() {
 // --- Credentials ---
 
 function loadCredentials() {
-  const secretsPath = join(homedir(), '.clawdbot', 'secrets', 'zulip.env');
+  const secretsPath = join(homedir(), '.openclaw', 'secrets', 'zulip.env');
   if (!existsSync(secretsPath)) return null;
 
   const content = readFileSync(secretsPath, 'utf-8');
@@ -43,7 +43,7 @@ function loadCredentials() {
 // --- Persona Routing (Optional) ---
 
 function loadPersonasConfig() {
-  const configPath = join(homedir(), '.clawdbot', 'secrets', 'zulip-personas.json');
+  const configPath = join(homedir(), '.openclaw', 'secrets', 'zulip-personas.json');
   if (!existsSync(configPath)) return null;
 
   try {

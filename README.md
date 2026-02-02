@@ -42,7 +42,7 @@ The plugin loads in OpenClaw and implements the core channel plugin contract (co
 │                 OpenClaw Gateway                 │
 ├──────────────────────────────────────────────────┤
 │  zulip-openclaw channel plugin                   │
-│  ├── config: account from ~/.clawdbot/secrets/   │
+│  ├── config: account from ~/.openclaw/secrets/   │
 │  ├── gateway: long-poll event loop               │
 │  ├── outbound: sendText, sendMedia               │
 │  └── actions: send, react, read, edit, delete    │
@@ -55,7 +55,7 @@ The plugin registers as an OpenClaw channel. All messaging goes through OpenClaw
 
 **Requires Node.js 18+** (for native fetch)
 
-1. Add credentials to `~/.clawdbot/secrets/zulip.env`:
+1. Add credentials to `~/.openclaw/secrets/zulip.env`:
    ```
    ZULIP_EMAIL=bot@your-org.zulipchat.com
    ZULIP_API_KEY=your-api-key

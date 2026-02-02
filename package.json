@@ -2,7 +2,7 @@
   "name": "zulip-openclaw",
   "version": "0.1.0",
   "description": "Zulip channel plugin for OpenClaw",
-  "main": "src/index.js",
+  "main": "index.js",
   "license": "MIT",
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
@@ -11,7 +11,7 @@
     "jest": "^29.7.0"
   },
   "clawdbot": {
-    "extensions": ["src/index.js"],
+    "extensions": ["index.js"],
     "channel": {
       "id": "zulip",
       "label": "Zulip",
